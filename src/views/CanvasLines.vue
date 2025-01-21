@@ -1,6 +1,14 @@
 <template>
   <div class="canvas-lines" ref="mainBlock">
-    <canvas class="main-frame" ref="canvasRef"></canvas>
+    <canvas
+      @mousedown="mouseDown"
+      @mouseup="mouseUp"
+      @mousemove="mouseMove"
+      class="main-frame" 
+      ref="canvasRef"
+    >
+    </canvas>
+
     <button @click="addNewFigure" class="canvas-lines__button">
       Добавить
     </button>
@@ -8,6 +16,8 @@
 </template>
 
 <script lang="ts">
+
+import { CircleElement } from '@/store'
 
 import { defineComponent } from 'vue'
 import { mapActions, mapState } from 'vuex'
@@ -19,7 +29,7 @@ export default defineComponent({
 
   data: () => ({
     contextCanvas: {} as CanvasRenderingContext2D,
-    listOfCoords: [] as Array<[number, number, number]>
+    activeId: null as number | null
   }),
 
   computed: {
@@ -34,48 +44,44 @@ export default defineComponent({
     canvas.width = block.clientWidth
     canvas.height = block.clientHeight
 
-    canvas.onmousedown = this.mouseDown
+    this.loadElements(3)
 
     let ctx = canvas.getContext('2d')
     if (!ctx) return
 
     this.contextCanvas = ctx
     this.initFigures(ctx)
-    this.activateCoords()
   },
 
   methods: {
     ...mapActions([
-      'addElement'
+      'loadElements',
+      'addElement',
+      'changeElement',
+      'updatePath'
     ]),
 
-    activateCoords() {
-      this.listElements.forEach((element: { startPositionX: number; startPositionY: number; radius: number }) => {
-        const x = element.startPositionX
-        const y = element.startPositionY
-        const rad = element.radius
-        this.listOfCoords.push([x, y, rad])
-      })
-    },
-
     initFigures(canvasCtx: CanvasRenderingContext2D) {
-      this.listElements.forEach((element: { startPositionX: number; startPositionY: number; radius: number }) => {
+      canvasCtx.clearRect(-1000, -1000, 3000, 3000)
+      this.listElements.forEach((element: CircleElement) => {
         const x = element.startPositionX
         const y = element.startPositionY
         const rad = element.radius
+        const circle = new Path2D()
         
         canvasCtx.fillStyle = 'hsl(213deg 100% 52.07%)';
         canvasCtx.lineWidth = 6
         canvasCtx.beginPath()
-        canvasCtx.arc(x, y, rad, 0, Math.PI * 2)
-        canvasCtx.stroke()
-        canvasCtx.fill()
+        circle.arc(x, y, rad, 0, Math.PI * 2)
+        canvasCtx.stroke(circle)
+        canvasCtx.fill(circle)
 
+        this.updatePath({id: element.id, path: circle})
         this.makeChainpointOnCircle(canvasCtx, element)
       })
     },
 
-    makeChainpointOnCircle(canvasCtx: CanvasRenderingContext2D, element: { startPositionX: number; startPositionY: number; radius: number }) {
+    makeChainpointOnCircle(canvasCtx: CanvasRenderingContext2D, element: CircleElement) {
       const squareLength = 36
       const centerCoord = squareLength /2
       const x = element.startPositionX
@@ -98,33 +104,43 @@ export default defineComponent({
       this.initFigures(this.contextCanvas)
     },
 
-    mouseIn(startX: number, startY: number, element: number[]) {
-      const circle = new Path2D()
-      circle.arc(element[0], element[1], element[2], 0, 2 * Math.PI)
-      // this.contextCanvas.fillStyle = 'red'
-      // this.contextCanvas.fill(circle)
-      console.log(circle)
-      console.log(startX)
-      console.log(startY)
-      console.log(element)
+    mouseIn(startX: number, startY: number, path: Path2D | null) {
+      if (!path) return
       
-      const isPointInPath = this.contextCanvas.isPointInPath(circle, startX, startY)
-      console.log(isPointInPath)
+      const isPointInPath = this.contextCanvas.isPointInPath(path, startX, startY)
       return isPointInPath
     },
 
     mouseDown(event: MouseEvent) {
       event.preventDefault()
 
-      let startX = event.clientX
-      let startY = event.clientY
+      let startX = event.offsetX
+      let startY = event.offsetY
 
-      this.listOfCoords.forEach(element => {
-        if (this.mouseIn(startX, startY, element)) {
-          console.log('IN')
+      this.listElements.forEach((element: CircleElement) => {
+        if (this.mouseIn(startX, startY, element.pathModel)) {
+          console.log('IN CIRCLE')
+          this.activeId = element.id
         }
       });
-    }
+    },
+    mouseUp() {
+      this.activeId = null
+    },
+
+    mouseMove (event: MouseEvent) {
+      event.preventDefault()
+      if (this.activeId === null) {
+        return
+      }
+
+      this.changeElement({
+        id: this.activeId,
+        newX: event.offsetX,
+        newY: event.offsetY
+      })
+      this.initFigures(this.contextCanvas)
+    },
   }
 })
 </script>
