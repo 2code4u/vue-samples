@@ -1,0 +1,2 @@
+(window["webpackJsonp"]=window["webpackJsonp"]||[]).push([["about"],{f820:function(n,e,t){"use strict";t.r(e);var c=t("7a23");const a={class:"about"};function o(n,e){return Object(c["q"])(),Object(c["d"])("div",a,e[0]||(e[0]=[Object(c["e"])("h1",null,"Some practices with new Vue and TS",-1)]))}var s=t("6b0d"),u=t.n(s);const r={},b=u()(r,[["render",o]]);e["default"]=b}}]);
+//# sourceMappingURL=about.ec338353.js.map
