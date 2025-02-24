@@ -1,5 +1,7 @@
 # [vue-samples](https://2code4u.github.io/vue-samples/#/canvas-lines)
 
+## Практика с Canvas по понимаю логики рисование фигур и перемещению за счёт ререндеринга
+
 ## Project setup
 ```
 npm install
